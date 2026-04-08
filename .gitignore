@@ -26,3 +26,6 @@ concepts.txt
 core methods.txt
 data models.txt
 mcp registry.txt
+
+# Test Scripts
+test_api_key.py
