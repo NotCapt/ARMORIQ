@@ -1,0 +1,13 @@
+anthropic
+alpaca-trade-api
+armoriq-sdk
+fastapi
+uvicorn
+pydantic
+streamlit
+python-dotenv
+cryptography
+requests
+yfinance
+pandas
+numpy
