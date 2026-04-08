@@ -1,0 +1,347 @@
+# MCP Registry
+
+
+
+MCP Registry [#mcp-registry]
+
+The MCP Registry allows you to register and manage your Model Context Protocol (MCP) servers with the ArmorIQ platform.
+
+Building Your Own MCP [#building-your-own-mcp]
+
+Want to create your own MCP for ArmorIQ SDK? Check out the [MCP Format Requirements](./mcp-format) guide to learn the exact protocol specifications needed.
+
+Registering Your MCP [#registering-your-mcp]
+
+Once you've built your MCP following the format requirements, register it with the platform:
+
+Step 1: Login to Platform [#step-1-login-to-platform]
+
+Navigate to [platform.armoriq.ai](https://platform.armoriq.ai) and sign in with your credentials.
+
+Step 2: Navigate to MCP Registry [#step-2-navigate-to-mcp-registry]
+
+Go to the MCP Registry section in the platform dashboard.
+
+Step 3: Add Your MCP [#step-3-add-your-mcp]
+
+Click on "Add MCP" and provide:
+
+* **MCP Name**: A unique identifier for your MCP (e.g., `analytics-mcp`, `finance-mcp`)
+* **MCP URL**: Your HTTPS endpoint (e.g., `https://your-mcp.example.com/mcp`)
+
+Step 4: Onboard to Platform [#step-4-onboard-to-platform]
+
+Submit the form to onboard your MCP to the ArmorIQ platform. Your MCP will be validated and made available for use.
+
+Using Your MCP with ArmorIQ SDK [#using-your-mcp-with-armoriq-sdk]
+
+Once registered, you can access your MCP from the ArmorIQ SDK using the **exact same name** you registered:
+
+```python
+from armoriq_sdk import ArmorIQClient
+
+client = ArmorIQClient(
+    api_key="ak_live_...",
+    user_id="user_123",
+    agent_id="my_agent"
+)
+
+# Create a plan that uses your registered MCP
+plan = client.capture_plan(
+    prompt="Analyze user behavior data",
+    mcp_actions=[
+        {
+            "mcp": "analytics-mcp",  # Use the exact name you registered
+            "action": "analyze",
+            "parameters": {
+                "data_source": "user_events"
+            }
+        }
+    ]
+)
+
+# Get token and delegate
+token = client.get_intent_token(plan_capture=plan)
+result = client.delegate(token)
+```
+
+**Important**: The MCP name in your SDK calls must match exactly with the name you used during registration on the platform.
+
+# MCP Format Requirements
+
+
+
+MCP Format Requirements [#mcp-format-requirements]
+
+This guide outlines the exact format requirements for building Model Context Protocol (MCP) servers that integrate with the ArmorIQ SDK.
+
+Protocol Requirements [#protocol-requirements]
+
+Transport Protocol [#transport-protocol]
+
+* **Protocol**: JSON-RPC 2.0 over HTTP
+* **Response Format**: Server-Sent Events (SSE)
+* **Endpoint**: Must expose a POST endpoint (e.g., `/mcp`)
+* **Content-Type**: `application/json` for requests
+* **Response Type**: `text/event-stream` for responses
+
+SSE Response Format [#sse-response-format]
+
+All JSON-RPC responses must be wrapped in SSE format:
+
+```
+event: message
+data: {json-rpc-response}
+
+```
+
+**Note**: The double newline at the end is required.
+
+Required Methods [#required-methods]
+
+1. initialize [#1-initialize]
+
+Handshake between client and server.
+
+**Request**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "armoriq-agent",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+**Response**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": {}
+    },
+    "serverInfo": {
+      "name": "your-mcp-server-name",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+2. tools/list [#2-toolslist]
+
+Return list of available tools.
+
+**Request**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list"
+}
+```
+
+**Response**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "name": "tool_name",
+        "description": "Clear description of what this tool does",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "parameter1": {
+              "type": "string",
+              "description": "Description of parameter1"
+            }
+          },
+          "required": ["parameter1"]
+        }
+      }
+    ]
+  }
+}
+```
+
+3. tools/call [#3-toolscall]
+
+Execute a specific tool.
+
+**Request**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "tool_name",
+    "arguments": {
+      "parameter1": "value1"
+    }
+  }
+}
+```
+
+**Response**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"result\": \"your data here\"}"
+      }
+    ]
+  }
+}
+```
+
+**Important**:
+
+* The `content` field must be an array
+* Each item must have `type: "text"`
+* The actual data must be a JSON string in the `text` field
+* Do NOT return raw objects in `text`, stringify them first
+
+Python Implementation Example [#python-implementation-example]
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
+import json
+
+app = FastAPI()
+
+TOOLS = [
+    {
+        "name": "example_tool",
+        "description": "Example tool description",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Query parameter"
+                }
+            },
+            "required": ["query"]
+        }
+    }
+]
+
+def sse_response(data):
+    """Format response as SSE"""
+    json_str = json.dumps(data)
+    return f"event: message\ndata: {json_str}\n\n"
+
+async def handle_jsonrpc(request_data):
+    method = request_data.get("method")
+    msg_id = request_data.get("id")
+    
+    if method == "initialize":
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "result": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {"tools": {}},
+                "serverInfo": {
+                    "name": "example-mcp",
+                    "version": "1.0.0"
+                }
+            }
+        }
+    
+    elif method == "tools/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "result": {"tools": TOOLS}
+        }
+    
+    elif method == "tools/call":
+        tool_name = request_data["params"]["name"]
+        arguments = request_data["params"]["arguments"]
+        
+        # Execute your tool logic here
+        result_data = {"result": "processed data"}
+        
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "result": {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(result_data)
+                    }
+                ]
+            }
+        }
+
+@app.post("/mcp")
+async def mcp_endpoint(request: Request):
+    request_data = await request.json()
+    response_data = await handle_jsonrpc(request_data)
+    
+    async def stream():
+        yield sse_response(response_data)
+    
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream"
+    )
+```
+
+Deployment Requirements [#deployment-requirements]
+
+Your MCP must be deployed and accessible via HTTPS:
+
+1. **Endpoint**: Public HTTPS URL (e.g., `https://your-mcp.example.com`)
+2. **Authentication**: Proper authentication mechanism enabled
+3. **Environment**: Production-ready with proper error handling
+
+Testing Your MCP [#testing-your-mcp]
+
+Before registering with ArmorIQ:
+
+1. Test the `/mcp` endpoint responds to POST requests
+2. Verify SSE format in responses
+3. Ensure all three methods (`initialize`, `tools/list`, `tools/call`) work
+4. Check that tool responses are properly JSON-stringified
+
+Common Issues [#common-issues]
+
+Response Not Streaming [#response-not-streaming]
+
+Ensure you're returning `StreamingResponse` with `media_type="text/event-stream"`.
+
+Tools Not Found [#tools-not-found]
+
+Verify your `tools/list` response matches the exact format shown above.
+
+Invalid JSON in Response [#invalid-json-in-response]
+
+The `text` field in `tools/call` response must contain a JSON string, not a raw object.

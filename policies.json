@@ -1,0 +1,245 @@
+{
+  "policies": {
+
+    "tech_buy_only": {
+      "description": "Buy-only policy for tech sector stocks. No selling, no data exfiltration, no margin.",
+      "use_when": "User wants to buy/invest in tech stocks",
+      "allow": [
+        "alpaca-mcp/get_quote",
+        "alpaca-mcp/buy_stock",
+        "alpaca-mcp/get_positions",
+        "alpaca-mcp/get_account_balance",
+        "market-data-mcp/get_fundamentals",
+        "market-data-mcp/get_price_history",
+        "market-data-mcp/screen_stocks"
+      ],
+      "deny": [
+        "alpaca-mcp/sell_stock",
+        "alpaca-mcp/liquidate_all",
+        "alpaca-mcp/transfer_funds",
+        "alpaca-mcp/short_sell",
+        "alpaca-mcp/enable_margin",
+        "alpaca-mcp/cancel_all_orders",
+        "exfil-mcp/*"
+      ],
+      "constraints": {
+        "allowed_actions": [
+          "get_quote", "buy_stock", "get_positions", "get_account_balance",
+          "get_fundamentals", "get_price_history", "screen_stocks"
+        ],
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD", "TSLA", "INTC", "QCOM"],
+        "allowed_sectors": ["Technology", "Semiconductors", "Software"],
+        "allowed_mcps": ["alpaca-mcp", "market-data-mcp"],
+        "max_spend_usd": 10000,
+        "max_qty_per_order": 20,
+        "min_price_usd": 1,
+        "max_price_usd": 5000,
+        "allow_sell": false,
+        "allow_short": false,
+        "allow_margin": false,
+        "require_quote_before_buy": true
+      }
+    },
+
+    "research_only": {
+      "description": "Read-only research policy. No trading actions at all. For Research Sub-Agent delegation.",
+      "use_when": "Sub-agent that should only read market data and never place orders",
+      "allow": [
+        "alpaca-mcp/get_quote",
+        "alpaca-mcp/get_positions",
+        "alpaca-mcp/get_account_balance",
+        "market-data-mcp/get_fundamentals",
+        "market-data-mcp/get_price_history",
+        "market-data-mcp/screen_stocks"
+      ],
+      "deny": [
+        "alpaca-mcp/buy_stock",
+        "alpaca-mcp/sell_stock",
+        "alpaca-mcp/liquidate_all",
+        "alpaca-mcp/transfer_funds",
+        "alpaca-mcp/short_sell",
+        "alpaca-mcp/enable_margin",
+        "exfil-mcp/*"
+      ],
+      "constraints": {
+        "allowed_actions": [
+          "get_quote", "get_positions", "get_account_balance",
+          "get_fundamentals", "get_price_history", "screen_stocks"
+        ],
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD", "TSLA", "INTC", "QCOM"],
+        "allowed_mcps": ["alpaca-mcp", "market-data-mcp"],
+        "max_spend_usd": 0,
+        "allow_sell": false,
+        "allow_short": false,
+        "allow_margin": false
+      }
+    },
+
+    "execute_only": {
+      "description": "Execution-only policy for Trade Sub-Agent. Can buy but cannot read or research.",
+      "use_when": "Sub-agent that only places pre-approved buy orders",
+      "allow": [
+        "alpaca-mcp/buy_stock",
+        "alpaca-mcp/get_account_balance"
+      ],
+      "deny": [
+        "alpaca-mcp/sell_stock",
+        "alpaca-mcp/liquidate_all",
+        "alpaca-mcp/get_positions",
+        "alpaca-mcp/get_quote",
+        "alpaca-mcp/transfer_funds",
+        "alpaca-mcp/short_sell",
+        "alpaca-mcp/enable_margin",
+        "market-data-mcp/*",
+        "exfil-mcp/*"
+      ],
+      "constraints": {
+        "allowed_actions": ["buy_stock", "get_account_balance"],
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD", "TSLA", "INTC", "QCOM"],
+        "allowed_mcps": ["alpaca-mcp"],
+        "max_spend_usd": 5000,
+        "max_qty_per_order": 10,
+        "allow_sell": false,
+        "allow_short": false,
+        "allow_margin": false
+      }
+    },
+
+    "conservative_portfolio": {
+      "description": "Strict conservative policy. Large cap only, small position sizes, no speculative assets.",
+      "use_when": "User wants safe or conservative investing",
+      "allow": [
+        "alpaca-mcp/get_quote",
+        "alpaca-mcp/buy_stock",
+        "alpaca-mcp/get_positions",
+        "alpaca-mcp/get_account_balance",
+        "market-data-mcp/get_fundamentals",
+        "market-data-mcp/screen_stocks"
+      ],
+      "deny": [
+        "alpaca-mcp/sell_stock",
+        "alpaca-mcp/liquidate_all",
+        "alpaca-mcp/transfer_funds",
+        "alpaca-mcp/short_sell",
+        "alpaca-mcp/enable_margin",
+        "exfil-mcp/*"
+      ],
+      "constraints": {
+        "allowed_actions": [
+          "get_quote", "buy_stock", "get_positions", "get_account_balance",
+          "get_fundamentals", "screen_stocks"
+        ],
+        "allowed_tickers": ["AAPL", "MSFT", "GOOGL", "AMZN", "BRK.B", "JPM", "JNJ", "V", "PG"],
+        "allowed_sectors": ["Technology", "Finance", "Healthcare", "Consumer Staples"],
+        "allowed_mcps": ["alpaca-mcp", "market-data-mcp"],
+        "max_spend_usd": 5000,
+        "max_qty_per_order": 5,
+        "min_market_cap_b": 100,
+        "max_price_usd": 1000,
+        "allow_sell": false,
+        "allow_short": false,
+        "allow_margin": false,
+        "require_quote_before_buy": true
+      }
+    },
+
+    "rebalance_buy_only": {
+      "description": "Portfolio rebalancing — buy side only. Sell steps are always stripped even if agent suggests them.",
+      "use_when": "User says rebalance or diversify",
+      "allow": [
+        "alpaca-mcp/get_quote",
+        "alpaca-mcp/buy_stock",
+        "alpaca-mcp/get_positions",
+        "alpaca-mcp/get_account_balance",
+        "market-data-mcp/get_fundamentals",
+        "market-data-mcp/screen_stocks"
+      ],
+      "deny": [
+        "alpaca-mcp/sell_stock",
+        "alpaca-mcp/liquidate_all",
+        "alpaca-mcp/transfer_funds",
+        "alpaca-mcp/short_sell",
+        "alpaca-mcp/enable_margin",
+        "exfil-mcp/*"
+      ],
+      "constraints": {
+        "allowed_actions": [
+          "get_quote", "buy_stock", "get_positions", "get_account_balance",
+          "get_fundamentals", "screen_stocks"
+        ],
+        "allowed_tickers": [
+          "AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "AMD", "TSLA",
+          "SPY", "QQQ", "VTI"
+        ],
+        "allowed_mcps": ["alpaca-mcp", "market-data-mcp"],
+        "max_spend_usd": 10000,
+        "max_qty_per_order": 15,
+        "allow_sell": false,
+        "allow_short": false,
+        "allow_margin": false
+      }
+    },
+
+    "compliance_strict": {
+      "description": "Maximum compliance policy. Absolute minimum action surface, no external calls, full audit.",
+      "use_when": "Regulated environment, compliance demo, or maximum-security scenario",
+      "allow": [
+        "alpaca-mcp/get_quote",
+        "alpaca-mcp/buy_stock",
+        "alpaca-mcp/get_account_balance"
+      ],
+      "deny": [
+        "alpaca-mcp/sell_stock",
+        "alpaca-mcp/liquidate_all",
+        "alpaca-mcp/get_positions",
+        "alpaca-mcp/transfer_funds",
+        "alpaca-mcp/short_sell",
+        "alpaca-mcp/enable_margin",
+        "market-data-mcp/get_price_history",
+        "exfil-mcp/*",
+        "*/*"
+      ],
+      "constraints": {
+        "allowed_actions": ["get_quote", "buy_stock", "get_account_balance"],
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL"],
+        "allowed_mcps": ["alpaca-mcp"],
+        "max_spend_usd": 2000,
+        "max_qty_per_order": 5,
+        "max_price_usd": 1000,
+        "allow_sell": false,
+        "allow_short": false,
+        "allow_margin": false,
+        "require_quote_before_buy": true
+      }
+    },
+
+    "attack_demo": {
+      "description": "Used ONLY to demo that ArmorIQ blocks violations even with a permissive policy. Sell and exfil are still denied.",
+      "use_when": "Demo scenario — adversarial prompt with sell and exfiltration attempt",
+      "allow": [
+        "alpaca-mcp/get_quote",
+        "alpaca-mcp/buy_stock",
+        "alpaca-mcp/get_positions",
+        "alpaca-mcp/get_account_balance"
+      ],
+      "deny": [
+        "alpaca-mcp/sell_stock",
+        "alpaca-mcp/liquidate_all",
+        "alpaca-mcp/transfer_funds",
+        "alpaca-mcp/short_sell",
+        "alpaca-mcp/enable_margin",
+        "exfil-mcp/*"
+      ],
+      "constraints": {
+        "allowed_actions": ["get_quote", "buy_stock", "get_positions", "get_account_balance"],
+        "allowed_tickers": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN"],
+        "allowed_mcps": ["alpaca-mcp"],
+        "max_spend_usd": 10000,
+        "max_qty_per_order": 20,
+        "allow_sell": false,
+        "allow_short": false,
+        "allow_margin": false
+      }
+    }
+  }
+}

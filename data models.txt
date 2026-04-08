@@ -1,0 +1,139 @@
+# Data Models
+
+
+
+Data Models [#data-models]
+
+Each data model has its own page. Use the links below to jump directly to the model you need.
+
+Models [#models]
+
+* [IntentPlan](/docs/data-models/intent-plan)
+* [IntentToken](/docs/data-models/intent-token)
+* [MCPResult](/docs/data-models/mcp-result)
+
+# IntentPlan
+
+
+
+IntentPlan [#intentplan]
+
+Returned by `capture_plan()`.
+
+```json
+{
+    "canonical_plan": {
+        "graph": {
+            "steps": [
+                {
+                    "action": str,
+                    "mcp": str,
+                    "index": int,
+                    "path": str,
+                    "value_digest": str
+                }
+            ],
+            "metadata": {
+                "canonical_version": str,
+                "plan_hash": str,
+                "created_at": str
+            }
+        }
+    },
+    "plan_hash": str,
+    "merkle_tree": {
+        "root": str,
+        "leaves": list[str],
+        "proofs": dict
+    },
+    "created_at": str
+}
+```
+
+# IntentToken
+
+
+
+IntentToken [#intenttoken]
+
+Returned by `get_intent_token()`.
+
+<Tabs groupId="language" items={['Python', 'TypeScript']}>
+  <Tab value="Python">
+    ```json
+    {
+        "success": bool,
+        "token": str,                  # JWT format: header.payload.signature
+        "plan_hash": str,              # SHA-256: "sha256:abc123..."
+        "merkle_root": str,            # SHA-256: "sha256:def456..."
+        "expires_at": int,             # Unix timestamp
+        "issued_at": int               # Unix timestamp
+    }
+    ```
+  </Tab>
+
+  <Tab value="TypeScript">
+    ```typescript
+    interface IntentToken {
+      tokenId: string;              // Unique identifier (intent_reference)
+      planHash: string;             // CSRG hash of the canonical plan
+      planId?: string;              // Plan ID from IAP
+      signature: string;            // Ed25519 signature from IAP
+      issuedAt: number;             // Unix timestamp
+      expiresAt: number;            // Unix timestamp
+      policy: Record<string, any>;  // Policy manifest
+      compositeIdentity: string;    // Composite identity hash
+      stepProofs: Array<any>;       // Merkle proofs for each step
+      totalSteps: number;           // Total number of steps
+      rawToken: Record<string, any>; // Full raw token payload
+      jwtToken?: string;            // JWT token for verify-step endpoint
+    }
+
+    // Helper functions
+    namespace IntentToken {
+      function isExpired(token: IntentToken): boolean;
+      function timeUntilExpiry(token: IntentToken): number;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Token JWT Payload [#token-jwt-payload]
+
+```json
+{
+    "iss": "armoriq-csrg-iap",
+    "sub": "user_001",
+    "aud": "armoriq-proxy",
+    "iat": 1737454200,
+    "exp": 1737457800,
+    "plan_hash": "sha256:...",
+    "merkle_root": "sha256:...",
+    "policy": {"allow": ["*"], "deny": []},
+    "identity": {
+        "user_id": "user_001",
+        "agent_id": "my_agent",
+        "api_key_id": "key_789"
+    }
+}
+```
+
+# MCPResult
+
+
+
+MCPResult [#mcpresult]
+
+Returned by `invoke()`.
+
+```json
+{
+    "success": bool,
+    "data": any,                   # MCP-specific response
+    "error": str,                  # Present if success=False
+    "execution_time_ms": int,
+    "mcp": str,
+    "action": str
+}
+```
+
