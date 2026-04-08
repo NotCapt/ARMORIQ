@@ -1,4 +1,4 @@
-anthropic
+google-genai
 alpaca-trade-api
 armoriq-sdk
 fastapi

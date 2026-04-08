@@ -104,7 +104,7 @@ with st.sidebar:
             st.code(json.dumps(p["armoriq_policy"], indent=2), language="json")
 
     st.divider()
-    st.caption("Built with ArmorIQ SDK + Anthropic Claude")
+    st.caption("Built with ArmorIQ SDK + Google Gemini")
 
 
 # --- Main Area ---
@@ -187,7 +187,7 @@ if run_button and user_prompt:
     # --- Phase 2: Reasoning ---
     st.markdown('<div class="phase-header">🧠 PHASE 2 — AI Reasoner</div>', unsafe_allow_html=True)
 
-    with st.spinner("Claude is planning the trade..."):
+    with st.spinner("Gemini is planning the trade..."):
         try:
             from agents.reasoner import plan_trades
             raw_plan = plan_trades(user_prompt, research_context=research_context)
@@ -312,10 +312,11 @@ if run_button and user_prompt:
             try:
                 entry = json.loads(line.strip())
                 status_emoji = "✅" if entry["status"] == "ALLOWED" else "🚫"
+                vtype_suffix = " ({})".format(entry["violation_type"]) if entry.get("violation_type") else ""
                 st.text(
                     f"{status_emoji} [{entry['timestamp'][:19]}] "
                     f"{entry['mcp']}/{entry['action']} → {entry['status']}"
-                    f"{f' ({entry[\"violation_type\"]})' if entry.get('violation_type') else ''}"
+                    f"{vtype_suffix}"
                 )
             except Exception:
                 pass

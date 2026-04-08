@@ -10,7 +10,7 @@ A secure AI-powered paper trading system that uses [ArmorIQ](https://armoriq.ai)
 clawshield/
 ├── main.py                        # 6-phase orchestrator
 ├── agents/
-│   ├── reasoner.py                # Claude-powered trade planner
+│   ├── reasoner.py                # Gemini-powered trade planner
 │   └── executor.py                # Executes through ArmorGate
 ├── research/
 │   └── stock_analyzer.py          # Yahoo Finance fundamental analysis
@@ -56,7 +56,7 @@ cp .env.example .env
 | `ARMORIQ_API_KEY` | [platform.armoriq.ai](https://platform.armoriq.ai) |
 | `ARMORIQ_USER_ID` | ArmorIQ dashboard |
 | `ARMORIQ_AGENT_ID` | ArmorIQ dashboard |
-| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
+| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) |
 | `ALPACA_API_KEY` | [alpaca.markets](https://alpaca.markets) (paper trading) |
 | `ALPACA_SECRET_KEY` | Alpaca dashboard |
 
@@ -69,7 +69,7 @@ python main.py
 ```
 
 Runs two scenarios:
-1. **Research-backed buy** — screens stocks via Yahoo Finance, plans via Claude, executes via ArmorIQ
+1. **Research-backed buy** — screens stocks via Yahoo Finance, plans via Gemini, executes via ArmorIQ
 2. **Attack demo** — attempts sell + data exfiltration + scope escalation (all blocked)
 
 ### Streamlit Dashboard
@@ -101,7 +101,7 @@ uvicorn mcp_server.alpaca_mcp:app --port 8001
 
 1. **Research** — Yahoo Finance screens stocks by 1Y return, consistency, volatility
 2. **Policy** — Heuristic policy resolution from `policies.json`
-3. **Reasoner** — Claude generates a structured JSON trade plan
+3. **Reasoner** — Gemini generates a structured JSON trade plan
 4. **Semantic Layer** — Validates steps against policy constraints
 5. **ArmorIQ** — `capture_plan()` → `get_intent_token()` with policy intersection
 6. **Executor** — Each step verified via Merkle proof before reaching Alpaca
@@ -109,7 +109,7 @@ uvicorn mcp_server.alpaca_mcp:app --port 8001
 ## Built With
 
 - [ArmorIQ SDK](https://armoriq.ai) — Cryptographic action verification
-- [Anthropic Claude](https://anthropic.com) — AI reasoning
+- [Google Gemini](https://ai.google.dev/) — AI reasoning
 - [Alpaca](https://alpaca.markets) — Paper trading API
 - [Yahoo Finance](https://pypi.org/project/yfinance/) — Market data
 - [Streamlit](https://streamlit.io) — Dashboard UI

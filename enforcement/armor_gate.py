@@ -43,7 +43,7 @@ class ArmorGate:
         print(f"   Allow list: {armoriq_policy['allow']}")
 
         self.captured_plan = self.client.capture_plan(
-            llm    = "claude-sonnet-4-20250514",
+            llm    = "gemini-2.0-flash",
             prompt = self.constraints.goal,
             plan   = plan
         )

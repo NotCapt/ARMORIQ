@@ -1,12 +1,13 @@
 # agents/reasoner.py
 
-import anthropic
+from google import genai
 import json
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-client = anthropic.Anthropic()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 REASONER_SYSTEM_PROMPT = """You are a financial planning agent for a paper trading system.
 
@@ -72,14 +73,17 @@ def plan_trades(user_prompt: str, research_context: str = None) -> dict:
     else:
         full_prompt = user_prompt
 
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=1500,
-        system=REASONER_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": full_prompt}]
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=full_prompt,
+        config={
+            "system_instruction": REASONER_SYSTEM_PROMPT,
+            "max_output_tokens": 1500,
+            "temperature": 0.2,
+        }
     )
 
-    raw_text = response.content[0].text.strip()
+    raw_text = response.text.strip()
 
     # Strip markdown code fences if model wraps response
     if raw_text.startswith("```"):
